@@ -12,6 +12,7 @@ async function findHotels(userId: number){
     if(ticket.status !== TicketStatus.PAID) throw paymentRequiredError();
 
     const hotels = await hotelsRepository.findHotels();
+    if(hotels.length === 0 ) throw notFoundError();
     return hotels;
 }
 
@@ -26,8 +27,9 @@ async function findHotelsById(userId: number, hotelId:string){
     if(!ticket.TicketType.includesHotel || ticket.TicketType.isRemote) throw paymentRequiredError();
     if(ticket.status !== TicketStatus.PAID) throw paymentRequiredError();
 
-    const hotels = await hotelsRepository.findHotelById(Number(hotelId));
-    return hotels;
+    const hotel = await hotelsRepository.findHotelById(Number(hotelId));
+    if(!hotel ) throw notFoundError();
+    return hotel;
 }
 
 export const hotelsService = {
