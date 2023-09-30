@@ -7,6 +7,7 @@ import {
   usersRouter,
   authenticationRouter,
   eventsRouter,
+  hotelsRouter,
   enrollmentsRouter,
   ticketsRouter,
   paymentsRouter,
@@ -23,6 +24,7 @@ app
   .use('/users', usersRouter)
   .use('/auth', authenticationRouter)
   .use('/event', eventsRouter)
+  .use('/hotels', hotelsRouter)
   .use('/enrollments', enrollmentsRouter)
   .use('/tickets', ticketsRouter)
   .use('/payments', paymentsRouter)
