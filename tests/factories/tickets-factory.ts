@@ -35,7 +35,7 @@ export async function createTicketTypeWithoutHotel() {
   });
 }
 
-export async function createPresentialHotelTicketType(){
+export async function createPresentialHotelTicketType() {
   return prisma.ticketType.create({
     data: {
       name: faker.name.findName(),
