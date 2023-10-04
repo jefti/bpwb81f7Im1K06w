@@ -12,8 +12,6 @@ import app, { init } from '@/app';
 
 beforeAll(async () => {
   await init();
-});
-beforeEach(async () => {
   await cleanDb();
 });
 
