@@ -1,8 +1,11 @@
 import faker from "@faker-js/faker";
 import httpStatus from "http-status";
+import * as jwt from 'jsonwebtoken';
 import app, { init } from "@/app";
 import supertest from "supertest";
-import { cleanDb } from "../helpers";
+import { cleanDb, generateValidToken } from "../helpers";
+import { createBooking, createUser } from "../factories";
+import { createHotel, createRoomWithHotelId } from "../factories/hotels-factory";
 
 
 beforeAll(async () => {
@@ -27,7 +30,51 @@ describe('GET /booking', ()=>{
         const response = await server.get('/booking').set('Authorization', `Bearer ${token}`);
     
         expect(response.status).toBe(httpStatus.UNAUTHORIZED);
-      });
+    });
+    it('should respond with status 401 if there is no session for given token', async () => {
+        const userWithoutSession = await createUser();
+        const token = jwt.sign({ userId: userWithoutSession.id }, process.env.JWT_SECRET);
     
+        const response = await server.get('/booking').set('Authorization', `Bearer ${token}`);
+    
+        expect(response.status).toBe(httpStatus.UNAUTHORIZED);
+    });
+
+    describe('when token is valid', ()=>{
+        it('should respond with status 404 when user doesnt have an booking yet', async () => {
+            const token = await generateValidToken();
+
+            const response = await server.get('/booking').set('Authorization', `Bearer ${token}`);
+
+            expect(response.status).toEqual(httpStatus.NOT_FOUND);
+        });
+        it('should respond with status 200 and with booking data', async () => {
+            const user = await createUser();
+            const token = await generateValidToken(user)
+            const createdHotel = await createHotel();
+            const createdRoom = await createRoomWithHotelId(createdHotel.id);
+            const createdBooking = await createBooking(user.id, createdRoom.id);
+
+            const response = await server.get('/booking').set('Authorization', `BEARER ${token}`);
+
+            expect(response.status).toEqual(httpStatus.OK);
+
+            expect(response.body).toEqual({
+                id: createdBooking.id,
+                userId: createdBooking.userId,
+                roomId: createdBooking.roomId,
+                createdAt: createdBooking.createdAt.toISOString(),
+                updatedAt: createdBooking.updatedAt.toISOString(),
+                Room:{
+                    id: createdRoom.id,
+                    name: createdRoom.name,
+                    capacity: createdRoom.capacity,
+                    hotelId: createdRoom.hotelId,
+                    createdAt: createdRoom.createdAt.toISOString(),
+                    updatedAt: createdRoom.updatedAt.toISOString()
+                }
+            });
+        })
+    });
 })
 
