@@ -11,6 +11,7 @@ import {
   ticketsRouter,
   paymentsRouter,
   hotelsRouter,
+  bookingsRouter,
 } from '@/routers';
 import { loadEnv, connectDb, disconnectDB } from '@/config';
 
@@ -23,6 +24,7 @@ app
   .get('/health', (_req, res) => res.send('OK!'))
   .use('/users', usersRouter)
   .use('/auth', authenticationRouter)
+  .use('/booking', bookingsRouter)
   .use('/event', eventsRouter)
   .use('/enrollments', enrollmentsRouter)
   .use('/tickets', ticketsRouter)
