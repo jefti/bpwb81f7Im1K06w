@@ -56,7 +56,7 @@ describe('GET /booking', ()=>{
             const createdBooking = await createBooking(user.id, createdRoom.id);
 
             const response = await server.get('/booking').set('Authorization', `BEARER ${token}`);
-
+            
             expect(response.status).toEqual(httpStatus.OK);
 
             expect(response.body).toEqual({
