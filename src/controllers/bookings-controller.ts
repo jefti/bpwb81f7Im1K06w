@@ -2,6 +2,7 @@ import { Response } from "express";
 import { AuthenticatedRequest } from "@/middlewares";
 import httpStatus from "http-status";
 import { InputBookingBody, bookingsService } from "@/services";
+import { invalidDataError } from "@/errors";
 
 
 
@@ -20,6 +21,7 @@ export async function createRoomBooking(req:AuthenticatedRequest, res:Response){
 
 export async function changeRoomBooking(req:AuthenticatedRequest, res:Response){
     const {userId} = req;
+    if(isNaN(Number(req.params.bookingId)) || Number(req.params.bookingId) <= 0) throw invalidDataError('bookingId');
     const bookingId = Number(req.params.bookingId);
     const {roomId} = req.body as InputBookingBody;
     const response = await bookingsService.updateBooking(userId, roomId,bookingId);

@@ -4,8 +4,10 @@ import * as jwt from 'jsonwebtoken';
 import app, { init } from "@/app";
 import supertest from "supertest";
 import { cleanDb, generateValidToken } from "../helpers";
-import { createBooking, createUser } from "../factories";
+import { createBooking, createEnrollmentWithAddress, createTicket, createTicketType, createUser } from "../factories";
 import { createHotel, createRoomWithHotelId } from "../factories/hotels-factory";
+import { Booking, Room, TicketStatus } from "@prisma/client";
+import { InputBookingBody } from "@/services";
 
 
 beforeAll(async () => {
@@ -109,7 +111,23 @@ describe('POST /booking', ()=>{
             const response = await server.post('/booking').set('Authorization', `Bearer ${token}`).send(invalidBody);
             expect(response.status).toEqual(httpStatus.BAD_REQUEST);
         });
-    })
+        describe('When token and body are valid',()=>{
+            it('Should respond with status 201 and BookingId when everything is OK',async ()=>{
+                const user = await createUser();
+                const token = await generateValidToken(user);
+                const enrollment = await createEnrollmentWithAddress(user);
+                const ticketType = await createTicketType(false, true);
+                const ticket = await createTicket(enrollment.id, ticketType.id, TicketStatus.PAID);
+                const createdHotel = await createHotel();
+                const createdRoom:Room = await createRoomWithHotelId(createdHotel.id);
+                const body:InputBookingBody = {roomId:createdRoom.id};
+
+                const response = await server.post('/booking').set('Authorization', `Bearer ${token}`).send(body);
+                expect(response.status).toEqual(httpStatus.OK);
+                expect(response.body).toEqual({bookingId: expect.any(Number)});
+            })
+        });
+    });
 });
 
 describe('PUT /booking/:bookingId', ()=>{
@@ -147,5 +165,36 @@ describe('PUT /booking/:bookingId', ()=>{
             const response = await server.put('/booking/1').set('Authorization', `Bearer ${token}`).send(invalidBody);
             expect(response.status).toEqual(httpStatus.BAD_REQUEST);
         });
+        describe('When token and body are valid', ()=>{
+            it('should respond with status code 400 when passed BookingId is invalid',async ()=>{
+                const user = await createUser();
+                const token = await generateValidToken(user);
+                const enrollment = await createEnrollmentWithAddress(user);
+                const ticketType = await createTicketType(false, true);
+                const ticket = await createTicket(enrollment.id, ticketType.id, TicketStatus.PAID);
+                const createdHotel = await createHotel();
+                const createdRoom:Room = await createRoomWithHotelId(createdHotel.id);
+                const body:InputBookingBody = {roomId:createdRoom.id};
+
+                const response = await server.put('/booking/-5').set('Authorization', `Bearer ${token}`).send(body);
+                expect(response.status).toEqual(httpStatus.BAD_REQUEST);
+            });
+            it('Should respond with status code 200 and bookingId when everything is OK',async()=>{
+                const user = await createUser();
+                const token = await generateValidToken(user);
+                const enrollment = await createEnrollmentWithAddress(user);
+                const ticketType = await createTicketType(false, true);
+                const ticket = await createTicket(enrollment.id, ticketType.id, TicketStatus.PAID);
+                const createdHotel = await createHotel();
+                const originalRoom:Room = await createRoomWithHotelId(createdHotel.id);
+                const createdBooking:Booking = await createBooking(user.id, originalRoom.id);
+                const newRoom:Room = await createRoomWithHotelId(createdHotel.id);
+                const body:InputBookingBody = {roomId:newRoom.id};
+
+                const response = await server.put(`/booking/${createdBooking.id}`).set('Authorization', `Bearer ${token}`).send(body);
+                expect(response.status).toEqual(httpStatus.OK);
+                expect(response.body).toEqual({bookingId: expect.any(Number)});
+            });
+        })
     })
 });
