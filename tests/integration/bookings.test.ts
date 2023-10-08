@@ -61,10 +61,6 @@ describe('GET /booking', ()=>{
 
             expect(response.body).toEqual({
                 id: createdBooking.id,
-                userId: createdBooking.userId,
-                roomId: createdBooking.roomId,
-                createdAt: createdBooking.createdAt.toISOString(),
-                updatedAt: createdBooking.updatedAt.toISOString(),
                 Room:{
                     id: createdRoom.id,
                     name: createdRoom.name,
@@ -76,5 +72,80 @@ describe('GET /booking', ()=>{
             });
         })
     });
-})
+});
 
+describe('POST /booking', ()=>{
+    it('Should respond with error 401 if no token is given', async()=>{
+        const response = await server.post("/booking");
+
+        expect(response.status).toBe(httpStatus.UNAUTHORIZED);
+    });
+    it('should respond with status 401 if given token is not valid', async () => {
+        const token = faker.lorem.word();
+    
+        const response = await server.post('/booking').set('Authorization', `Bearer ${token}`);
+    
+        expect(response.status).toBe(httpStatus.UNAUTHORIZED);
+    });
+    it('should respond with status 401 if there is no session for given token', async () => {
+        const userWithoutSession = await createUser();
+        const token = jwt.sign({ userId: userWithoutSession.id }, process.env.JWT_SECRET);
+    
+        const response = await server.post('/booking').set('Authorization', `Bearer ${token}`);
+    
+        expect(response.status).toBe(httpStatus.UNAUTHORIZED);
+    });
+    describe('when token is valid', ()=>{
+        it('should respond with status 400 if no body is giving', async () => {
+            const token = await generateValidToken();
+
+            const response = await server.post('/booking').set('Authorization', `Bearer ${token}`);
+            expect(response.status).toEqual(httpStatus.BAD_REQUEST);
+        });
+        it('should respond with status 400 when body is invalid', async () => {
+            const token = await generateValidToken();
+            const invalidBody = { [faker.lorem.word()]: faker.lorem.word() };
+
+            const response = await server.post('/booking').set('Authorization', `Bearer ${token}`).send(invalidBody);
+            expect(response.status).toEqual(httpStatus.BAD_REQUEST);
+        });
+    })
+});
+
+describe('PUT /booking/:bookingId', ()=>{
+    it('Should respond with error 401 if no token is given', async()=>{
+        const response = await server.put("/booking/1");
+
+        expect(response.status).toBe(httpStatus.UNAUTHORIZED);
+    });
+    it('should respond with status 401 if given token is not valid', async () => {
+        const token = faker.lorem.word();
+    
+        const response = await server.put('/booking/1').set('Authorization', `Bearer ${token}`);
+    
+        expect(response.status).toBe(httpStatus.UNAUTHORIZED);
+    });
+    it('should respond with status 401 if there is no session for given token', async () => {
+        const userWithoutSession = await createUser();
+        const token = jwt.sign({ userId: userWithoutSession.id }, process.env.JWT_SECRET);
+    
+        const response = await server.put('/booking/1').set('Authorization', `Bearer ${token}`);
+    
+        expect(response.status).toBe(httpStatus.UNAUTHORIZED);
+    });
+    describe('when token is valid', ()=>{
+        it('should respond with status 400 if no body is giving', async () => {
+            const token = await generateValidToken();
+
+            const response = await server.put('/booking/1').set('Authorization', `Bearer ${token}`);
+            expect(response.status).toEqual(httpStatus.BAD_REQUEST);
+        });
+        it('should respond with status 400 when body is invalid', async () => {
+            const token = await generateValidToken();
+            const invalidBody = { [faker.lorem.word()]: faker.lorem.word() };
+
+            const response = await server.put('/booking/1').set('Authorization', `Bearer ${token}`).send(invalidBody);
+            expect(response.status).toEqual(httpStatus.BAD_REQUEST);
+        });
+    })
+});

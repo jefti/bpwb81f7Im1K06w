@@ -15,7 +15,8 @@ async function getBookingByUserId(userId: number) {
     return data;
 }
 async function createBooking(userId:number, roomId:number){
-    validateUserBooking(userId);
+    await validateUserBooking(userId);
+
     const roomInformation: RoomInformationParam = await bookingsRepository.findRoomById(roomId);
     if(!roomInformation) throw notFoundError();
     if(roomInformation.capacity - roomInformation.Booking.length <= 0) throw noVacancyError();
@@ -23,7 +24,7 @@ async function createBooking(userId:number, roomId:number){
     return {bookingId: booking.id};
 }
 async function updateBooking(userId:number, roomId:number, bookingId: number){
-    validateUserBooking(userId);
+    await validateUserBooking(userId);
     const pastBooking: Booking = await bookingsRepository.findBookingById(bookingId);
     if(!pastBooking) throw unauthorizedReservationError('User doesnt have a previous reservation to update.');
     if(pastBooking.userId !== userId) throw unauthorizedError();
@@ -41,11 +42,16 @@ async function validateUserBooking(userId: number) {
   
     const ticket = await ticketsRepository.findTicketByEnrollmentId(enrollment.id);
     if (!ticket) throw notFoundError();
-  
     const type = ticket.TicketType;
   
-    if (ticket.status === TicketStatus.RESERVED || type.isRemote || !type.includesHotel) {
-      throw unauthorizedReservationError('Users ticket insuficient to continue');
+    if (ticket.status === TicketStatus.RESERVED) {
+        throw unauthorizedReservationError(`User's ticket needs be paid to continue`);
+    }
+    if (type.isRemote) {
+        throw unauthorizedReservationError(`User's ticket won't be remote to continue`);
+    }
+    if (!type.includesHotel) {
+        throw unauthorizedReservationError(`User's ticket needs to includes hotel to continue`);
     }
   }
 
