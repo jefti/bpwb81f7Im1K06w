@@ -67,8 +67,11 @@ export function handleApplicationErrors(
       message: err.message,
     });
   }
-
   if(err.name === 'NoVacancyError') {
+    return res.status(httpStatus.FORBIDDEN).send(err.message);
+  }
+
+  if(err.name === 'UnauthorizedReservationError'){
     return res.status(httpStatus.FORBIDDEN).send(err.message);
   }
   /* eslint-disable-next-line no-console */

@@ -4,6 +4,7 @@ import { enrollmentRepository, ticketsRepository } from "@/repositories";
 import { Booking, Room, TicketStatus } from "@prisma/client";
 import { cannotListHotelsError } from "@/errors/cannot-list-hotels-error";
 import { noVacancyError } from "@/errors/no-vacancy-error";
+import { unauthorizedReservationError } from "@/errors/unauthorized-reservation-error";
 
 async function getBookingByUserId(userId: number) {
     const booking = await bookingsRepository.findBookingByUserId(userId);
@@ -24,6 +25,7 @@ async function createBooking(userId:number, roomId:number){
 async function updateBooking(userId:number, roomId:number, bookingId: number){
     validateUserBooking(userId);
     const pastBooking: Booking = await bookingsRepository.findBookingById(bookingId);
+    if(!pastBooking) throw unauthorizedReservationError('User doesnt have a previous reservation to update.');
     if(pastBooking.userId !== userId) throw unauthorizedError();
     if(pastBooking.roomId === roomId) throw conflictError("The provided room is already registered in your name.");
     const roomInformation: RoomInformationParam = await bookingsRepository.findRoomById(roomId);
@@ -43,7 +45,7 @@ async function validateUserBooking(userId: number) {
     const type = ticket.TicketType;
   
     if (ticket.status === TicketStatus.RESERVED || type.isRemote || !type.includesHotel) {
-      throw cannotListHotelsError();
+      throw unauthorizedReservationError('Users ticket insuficient to continue');
     }
   }
 
