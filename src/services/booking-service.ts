@@ -2,7 +2,6 @@ import { conflictError, notFoundError, unauthorizedError } from "@/errors";
 import { bookingsRepository } from "@/repositories/bookings-repository"
 import { enrollmentRepository, ticketsRepository } from "@/repositories";
 import { Booking, Room, TicketStatus } from "@prisma/client";
-import { cannotListHotelsError } from "@/errors/cannot-list-hotels-error";
 import { noVacancyError } from "@/errors/no-vacancy-error";
 import { unauthorizedReservationError } from "@/errors/unauthorized-reservation-error";
 
@@ -14,6 +13,7 @@ async function getBookingByUserId(userId: number) {
     const data = {id:booking.id, Room:booking.Room};
     return data;
 }
+
 async function createBooking(userId:number, roomId:number){
     await validateUserBooking(userId);
 
@@ -42,6 +42,7 @@ async function validateUserBooking(userId: number) {
   
     const ticket = await ticketsRepository.findTicketByEnrollmentId(enrollment.id);
     if (!ticket) throw notFoundError();
+    
     const type = ticket.TicketType;
   
     if (ticket.status === TicketStatus.RESERVED) {
